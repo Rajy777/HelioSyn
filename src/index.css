@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --color-slate-950: #020617;
+  --color-slate-100: #f1f5f9;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-slate-950);
+    color: var(--color-slate-100);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

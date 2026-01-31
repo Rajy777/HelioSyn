@@ -1,0 +1,207 @@
+@keyframes rotate-rays {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        opacity: 0.4;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px) rotateY(-15deg) rotateX(10deg);
+    }
+
+    50% {
+        transform: translateY(-20px) rotateY(-15deg) rotateX(10deg);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+@keyframes move-sun {
+    0% {
+        transform: translate(-50%, -50%) translateX(-300px) translateY(50px);
+        opacity: 0.5;
+    }
+
+    25% {
+        transform: translate(-50%, -50%) translateX(-150px) translateY(-30px);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: translate(-50%, -50%) translateX(0px) translateY(-80px);
+        opacity: 1;
+    }
+
+    75% {
+        transform: translate(-50%, -50%) translateX(150px) translateY(-30px);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) translateX(300px) translateY(50px);
+        opacity: 0.5;
+    }
+}
+
+@keyframes sun-rays-rotate {
+    0% {
+        transform: rotate(0deg) scale(1);
+    }
+
+    50% {
+        transform: rotate(180deg) scale(1.1);
+    }
+
+    100% {
+        transform: rotate(360deg) scale(1);
+    }
+}
+
+.solar-rays {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    animation: rotate-rays 20s linear infinite;
+}
+
+.solar-rays::before,
+.solar-rays::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: conic-gradient(from 0deg,
+            transparent 0deg,
+            rgba(34, 211, 238, 0.1) 45deg,
+            rgba(59, 130, 246, 0.2) 90deg,
+            transparent 135deg,
+            transparent 180deg,
+            rgba(34, 211, 238, 0.1) 225deg,
+            rgba(59, 130, 246, 0.2) 270deg,
+            transparent 315deg,
+            transparent 360deg);
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.solar-rays::after {
+    animation-delay: 2s;
+    opacity: 0.6;
+}
+
+.device-mockup {
+    perspective: 1000px;
+    animation: float 6s ease-in-out infinite;
+}
+
+.glow-border {
+    position: relative;
+    overflow: hidden;
+}
+
+.glow-border::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(34, 211, 238, 0.5),
+            transparent);
+    animation: shimmer 3s infinite;
+    border-radius: inherit;
+}
+
+.moving-sun {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    width: 600px;
+    height: 600px;
+    animation: move-sun 25s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.moving-sun::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle,
+            rgba(251, 191, 36, 1) 0%,
+            rgba(251, 146, 60, 0.95) 15%,
+            rgba(249, 115, 22, 0.8) 30%,
+            rgba(234, 88, 12, 0.5) 50%,
+            rgba(194, 65, 12, 0.2) 70%,
+            transparent 100%);
+    border-radius: 50%;
+    box-shadow:
+        0 0 80px rgba(251, 191, 36, 1),
+        0 0 150px rgba(251, 146, 60, 0.8),
+        0 0 220px rgba(249, 115, 22, 0.6),
+        0 0 300px rgba(234, 88, 12, 0.4);
+}
+
+.moving-sun::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: conic-gradient(from 0deg,
+            transparent 0deg,
+            rgba(251, 191, 36, 0.4) 15deg,
+            rgba(251, 146, 60, 0.5) 30deg,
+            transparent 45deg,
+            transparent 90deg,
+            rgba(251, 191, 36, 0.4) 105deg,
+            rgba(251, 146, 60, 0.5) 120deg,
+            transparent 135deg,
+            transparent 180deg,
+            rgba(251, 191, 36, 0.4) 195deg,
+            rgba(251, 146, 60, 0.5) 210deg,
+            transparent 225deg,
+            transparent 270deg,
+            rgba(251, 191, 36, 0.4) 285deg,
+            rgba(251, 146, 60, 0.5) 300deg,
+            transparent 315deg,
+            transparent 360deg);
+    border-radius: 50%;
+    animation: sun-rays-rotate 12s linear infinite;
+}
