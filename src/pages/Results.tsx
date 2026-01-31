@@ -1,7 +1,10 @@
 
-import React, { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { runSmartSimulation } from '../lib/simulation';
+import PredictionChart from '../components/PredictionChart';
+import { predictionService } from '../lib/predictionService';
+import type { PredictionResult } from '../lib/predictionService';
 
 
 const Results = () => {
@@ -37,6 +40,72 @@ const Results = () => {
 
         return { metrics, baselineMetrics, data };
     }, []);
+
+    // ML Prediction State
+    const [mlPredictions, setMlPredictions] = useState<PredictionResult[]>([]);
+    const [mlLoading, setMlLoading] = useState(false);
+    const [mlError, setMlError] = useState<string | null>(null);
+
+    // Load ML predictions on mount with context from simulation
+    useEffect(() => {
+        const loadPredictions = async () => {
+            setMlLoading(true);
+            try {
+                // Get last 24h of simulation data for context
+                const solarLogs = metrics.logs.solar;
+                const tempLogs = metrics.logs.temp;
+                const timeLogs = metrics.logs.time;
+
+                // We need the last values for context (Lags: 1, 2, 3, 24)
+                const lastIdx = solarLogs.length - 1;
+                const lastKnownValues = [
+                    solarLogs[lastIdx] || 0,
+                    solarLogs[lastIdx - 1] || 0,
+                    solarLogs[lastIdx - 2] || 0,
+                    solarLogs[lastIdx - 23] || 0
+                ];
+
+                // Also pass some weather context if available
+                const weatherContext = timeLogs.map((t, i) => ({
+                    timestamp: t,
+                    value: tempLogs[i]
+                })).slice(-24); // Last 24 hours of weather
+
+                // Get last timestamp for seasonal alignment (try to find a real date string)
+                const storedData = localStorage.getItem('helioSynData');
+                const parsed = storedData ? JSON.parse(storedData) : null;
+                const solarFile = parsed?.files?.solar;
+                let lastTimestamp = undefined;
+
+                if (solarFile && solarFile.length > 0) {
+                    // Try to find the most recent valid timestamp in the uploaded data
+                    const latestPoint = solarFile[solarFile.length - 1];
+                    if (latestPoint.timestamp && String(latestPoint.timestamp).includes('-')) {
+                        lastTimestamp = String(latestPoint.timestamp);
+                    }
+                }
+
+                // Fallback to hour number only if no real date found (though backend is now robust)
+                if (!lastTimestamp) {
+                    lastTimestamp = timeLogs[lastIdx] !== null ? String(timeLogs[lastIdx]) : undefined;
+                }
+
+                const response = await predictionService.predict24Hours(weatherContext, lastKnownValues, lastTimestamp);
+                if (response.success && response.predictions) {
+                    setMlPredictions(response.predictions);
+                    setMlError(null);
+                } else {
+                    setMlError(response.error || 'Failed to generate predictions');
+                }
+            } catch (error) {
+                console.error('Failed to load ML predictions:', error);
+                setMlError('Machine Learning API is not responding. Ensure the backend is running.');
+            } finally {
+                setMlLoading(false);
+            }
+        };
+        loadPredictions();
+    }, [metrics]);
 
     // Delta Calculations
     const energySavings = baselineMetrics.energy.grid - metrics.energy.grid;
@@ -171,6 +240,29 @@ const Results = () => {
                     </ResponsiveContainer>
                 </div>
             </div>
+
+            {/* ML Solar Prediction Visualization */}
+            {mlPredictions.length > 0 && (
+                <PredictionChart
+                    predictions={mlPredictions}
+                    title="XGBoost Solar Power Forecast (Next 24 Hours)"
+                    showConfidence={true}
+                />
+            )}
+
+            {mlLoading && (
+                <div className="p-6 rounded-3xl bg-slate-900/40 border border-slate-800 backdrop-blur-md text-center py-12">
+                    <div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-slate-400">Consulting XGBoost for solar forecast...</p>
+                </div>
+            )}
+
+            {mlError && !mlLoading && (
+                <div className="p-6 rounded-3xl bg-red-500/10 border border-red-500/20 backdrop-blur-md text-center">
+                    <p className="text-red-400 font-medium mb-1">Prediction Error</p>
+                    <p className="text-red-400/60 text-sm">{mlError}</p>
+                </div>
+            )}
 
             {/* Schedule Timeline */}
             <div className="p-6 rounded-3xl bg-slate-900/40 border border-slate-800 backdrop-blur-md">

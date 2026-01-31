@@ -1,7 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Brain, Sparkles, AlertCircle, CheckCircle, Info, Lightbulb, Send, Loader } from 'lucide-react';
 import { generateInsights, askAI, isAIEnabled, type AIInsight } from '../lib/geminiAI';
+import { predictionService } from '../lib/predictionService';
 
 const AIInsights = () => {
     const [insights, setInsights] = useState<AIInsight[]>([]);
@@ -24,7 +25,19 @@ const AIInsights = () => {
             if (smartResults && baselineResults) {
                 const smart = JSON.parse(smartResults);
                 const baseline = JSON.parse(baselineResults);
-                const aiInsights = await generateInsights(smart, baseline);
+
+                // Get ML metrics if available
+                let mlMetrics;
+                try {
+                    const statusResponse = await predictionService.getModelStatus();
+                    if (statusResponse.success && statusResponse.data?.is_trained) {
+                        mlMetrics = statusResponse.data.metrics;
+                    }
+                } catch (e) {
+                    console.warn('Could not fetch ML status for insights');
+                }
+
+                const aiInsights = await generateInsights(smart, baseline, mlMetrics);
                 setInsights(aiInsights);
             } else {
                 // No simulation data available

@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FileUpload from '../components/FileUpload';
-import { Settings, Play, Plus, Trash2, Cpu, Zap } from 'lucide-react';
+import { Settings, Play, Plus, Trash2, Cpu, Zap, Brain, CheckCircle, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { parseCSV } from '../lib/csvParser';
 import { X } from 'lucide-react';
+import { predictionService } from '../lib/predictionService';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -35,6 +36,27 @@ const Dashboard = () => {
     });
 
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // ML Prediction State
+    const [mlStatus, setMlStatus] = useState<{ is_trained: boolean; metrics?: any }>({ is_trained: false });
+    const [isTraining, setIsTraining] = useState(false);
+    const [apiConnected, setApiConnected] = useState(false);
+
+    // Check ML API status on mount
+    useEffect(() => {
+        const checkMLStatus = async () => {
+            const healthy = await predictionService.healthCheck();
+            setApiConnected(healthy);
+
+            if (healthy) {
+                const status = await predictionService.getModelStatus();
+                if (status.success && status.data) {
+                    setMlStatus(status.data);
+                }
+            }
+        };
+        checkMLStatus();
+    }, []);
 
     const handleFileSelect = (key: string) => (file: File) => {
         setFiles(prev => ({ ...prev, [key]: file }));
@@ -83,6 +105,56 @@ const Dashboard = () => {
 
     const handleDeleteAppliance = (id: number) => {
         setAppliances(appliances.filter(a => a.id !== id));
+    };
+
+    const handleTrainMLModel = async () => {
+        if (!files.solar) {
+            alert('Please upload solar generation data first');
+            return;
+        }
+
+        setIsTraining(true);
+        try {
+            // Parse solar and weather data
+            const solarDataRaw = await parseCSV(files.solar, 'solar');
+            const weatherDataRaw = files.weather ? await parseCSV(files.weather, 'weather') : undefined;
+
+            // Convert to ML API format (include extras for rich feature learning)
+            const solarData = solarDataRaw.map((point, index) => ({
+                timestamp: point.timestamp !== null ? point.timestamp : index,
+                value: point.value,
+                extras: point.extras
+            }));
+
+            const weatherData = weatherDataRaw?.map((point, index) => ({
+                timestamp: point.timestamp !== null ? point.timestamp : index,
+                value: point.value,
+                extras: point.extras
+            }));
+
+            // Train the model
+            const response = await predictionService.trainModel({
+                solar_data: solarData,
+                weather_data: weatherData
+            });
+
+            if (response.success) {
+                alert(`Model trained successfully!\nTest RMSE: ${response.metrics?.test_rmse.toFixed(3)} kW\nTest R²: ${response.metrics?.test_r2.toFixed(3)}`);
+
+                // Update status
+                const status = await predictionService.getModelStatus();
+                if (status.success && status.data) {
+                    setMlStatus(status.data);
+                }
+            } else {
+                alert(`Training failed: ${response.error}`);
+            }
+        } catch (error) {
+            console.error('Training error:', error);
+            alert('Failed to train model. Make sure the Python API is running.');
+        } finally {
+            setIsTraining(false);
+        }
     };
 
     return (
@@ -176,6 +248,79 @@ const Dashboard = () => {
                     </div>
                 </section>
             </div>
+
+            {/* ML Prediction Training Section */}
+            <section className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                        <Brain className="w-5 h-5 text-purple-400" />
+                        <h2 className="text-xl font-semibold text-white">ML Solar Prediction</h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {apiConnected ? (
+                            <div className="flex items-center gap-1 text-xs text-green-400">
+                                <CheckCircle className="w-4 h-4" />
+                                <span>API Connected</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-1 text-xs text-red-400">
+                                <XCircle className="w-4 h-4" />
+                                <span>API Offline</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Status Card */}
+                    <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800">
+                        <h3 className="text-sm text-slate-400 mb-2">Model Status</h3>
+                        {mlStatus.is_trained ? (
+                            <div>
+                                <p className="text-green-400 font-semibold mb-2">✓ Trained</p>
+                                {mlStatus.metrics && (
+                                    <div className="text-xs text-slate-500 space-y-1">
+                                        <p>RMSE: {mlStatus.metrics.test_rmse?.toFixed(3)} kW</p>
+                                        <p>R²: {mlStatus.metrics.test_r2?.toFixed(3)}</p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-slate-500">Not trained</p>
+                        )}
+                    </div>
+
+                    {/* Training Action */}
+                    <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800">
+                        <h3 className="text-sm text-slate-400 mb-2">Train Model</h3>
+                        <button
+                            onClick={handleTrainMLModel}
+                            disabled={!files.solar || isTraining || !apiConnected}
+                            className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                            {isTraining ? 'Training...' : 'Train XGBoost'}
+                        </button>
+                        <p className="text-xs text-slate-500 mt-2">
+                            {!files.solar ? 'Upload solar data first' : 'Uses uploaded solar & weather data'}
+                        </p>
+                    </div>
+
+                    {/* Info */}
+                    <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800">
+                        <h3 className="text-sm text-slate-400 mb-2">About</h3>
+                        <p className="text-xs text-slate-500">
+                            XGBoost machine learning model provides accurate solar power predictions based on historical patterns, time features, and weather data.
+                        </p>
+                    </div>
+                </div>
+
+                {!apiConnected && (
+                    <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-sm text-yellow-200">
+                        <p className="font-semibold mb-1">⚠️ Python API Not Running</p>
+                        <p className="text-xs">Start the backend server: <code className="bg-slate-900 px-2 py-0.5 rounded">cd backend && python api.py</code></p>
+                    </div>
+                )}
+            </section>
 
             {/* Manual Simulation Parameters */}
             <section className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-6">

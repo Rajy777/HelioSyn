@@ -21,7 +21,8 @@ export interface AIInsight {
  */
 export async function generateInsights(
     smartMetrics: SchedulerMetrics,
-    baselineMetrics: SchedulerMetrics
+    baselineMetrics: SchedulerMetrics,
+    mlMetrics?: { test_rmse: number; test_r2: number }
 ): Promise<AIInsight[]> {
     if (!genAI) {
         // Return fallback insights if AI is not enabled
@@ -51,6 +52,11 @@ export async function generateInsights(
 - Cost Savings: ₹${(baselineMetrics.cost.total - smartMetrics.cost.total).toFixed(2)} (${(((baselineMetrics.cost.total - smartMetrics.cost.total) / baselineMetrics.cost.total) * 100).toFixed(1)}%)
 - Carbon Reduction: ${(baselineMetrics.carbon - smartMetrics.carbon).toFixed(2)} kg CO₂
 - Grid Usage Reduction: ${(baselineMetrics.energy.grid - smartMetrics.energy.grid).toFixed(2)} kWh
+${mlMetrics ? `
+**ML Prediction Accuracy (XGBoost):**
+- RMSE: ${mlMetrics.test_rmse.toFixed(3)} kW
+- R² Score: ${mlMetrics.test_r2.toFixed(3)}
+` : ''}
 
 Provide insights as a JSON array with this structure:
 [
