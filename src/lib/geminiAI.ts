@@ -194,15 +194,20 @@ export async function askAI(question: string, context: string): Promise<string> 
     try {
         const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
-        const prompt = `You are a solar energy optimization expert. Answer the following question based on the context provided.
+        const prompt = `You are a helpful and versatile AI assistant for the HelioSyn project.
 
-**Context:**
+**Your Instructions:**
+1. If the user asks about the simulation results, solar energy, or project data, use the **Context** provided below to give a technical and expert answer.
+2. If the user asks a general question (e.g., "what's the weather?", "tell me a joke", or general knowledge), answer it helpfully and conversationally like a standard AI assistant.
+3. Keep your answers concise yet informative (max 150 words).
+
+**Project Context (if relevant):**
 ${context}
 
-**Question:**
+**User Question:**
 ${question}
 
-Provide a concise, actionable answer (max 100 words).`;
+Provide a clear and well-structured response.`;
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
