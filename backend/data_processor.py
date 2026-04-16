@@ -280,6 +280,7 @@ class SolarDataProcessor:
         # Ensure all features that were in training are here
         for col in self.feature_columns:
             if col not in df.columns:
-                df[col] = 0
+                df[col] = 0.0 # Use float to prevent int64 casting errors during recursive prediction
+                
                 
         return df[self.feature_columns]

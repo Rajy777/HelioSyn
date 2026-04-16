@@ -160,6 +160,12 @@ class SolarPredictionModel:
             raise ValueError("Model must be trained before making predictions")
             
         X = X_template.copy()
+        
+        # Ensure all columns are float to prevent TypeError: Invalid value for dtype 'int64'
+        for col in X.columns:
+            if X[col].dtype == 'int64' or X[col].dtype == 'int32':
+                X[col] = X[col].astype(float)
+        
         predictions = []
         
         for i in range(len(X)):

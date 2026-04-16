@@ -9,8 +9,8 @@ export const TIME_STEP_MINUTES = 10;
 // ========================================
 // DATA HUB SPECIFICATIONS
 // ========================================
-export const MAX_DATA_HUB_POWER = 10;  // kW
-export const BASELINE_BACKGROUND_LOAD = 3.0;  // kW
+export const MAX_DATA_HUB_POWER = 1000;  // kW
+export const BASELINE_BACKGROUND_LOAD = 50.0;  // kW
 
 // ========================================
 // TEMPERATURE & THERMAL MODEL

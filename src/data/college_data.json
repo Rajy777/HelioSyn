@@ -1,0 +1,40 @@
+{
+  "description": "Historical Solar and Grid data for the College Campus",
+  "data": [
+    {
+      "month": "March 2025",
+      "totalSolarGenKwh": 72740,
+      "totalGridImportKwh": 46120,
+      "peakSolarKw": 240,
+      "avgDailySolarKwh": 2346
+    },
+    {
+      "month": "April 2025",
+      "totalSolarGenKwh": 62669,
+      "totalGridImportKwh": 85985,
+      "peakSolarKw": 220,
+      "avgDailySolarKwh": 2088
+    },
+    {
+      "month": "May 2025",
+      "totalSolarGenKwh": 26221,
+      "totalGridImportKwh": 68893,
+      "peakSolarKw": 110,
+      "avgDailySolarKwh": 845
+    },
+    {
+      "month": "June 2025",
+      "totalSolarGenKwh": 71556,
+      "totalGridImportKwh": 27714,
+      "peakSolarKw": 250,
+      "avgDailySolarKwh": 2385
+    },
+    {
+      "month": "December 2025",
+      "totalSolarGenKwh": 71452,
+      "totalGridImportKwh": 19738,
+      "peakSolarKw": 230,
+      "avgDailySolarKwh": 2304
+    }
+  ]
+}

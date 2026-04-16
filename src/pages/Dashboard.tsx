@@ -4,7 +4,7 @@ import FileUpload from '../components/FileUpload';
 import { Settings, Play, Plus, Trash2, Cpu, Zap, Brain, CheckCircle, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { parseCSV } from '../lib/csvParser';
-import { X } from 'lucide-react';
+import { X, GraduationCap, Building2, BarChart3 } from 'lucide-react';
 import { predictionService } from '../lib/predictionService';
 
 const Dashboard = () => {
@@ -22,6 +22,8 @@ const Dashboard = () => {
         { id: 3, name: "EV Charger", power: 7.0, duration: 3.5, priority: "Low", flexible: true },
         { id: 4, name: "Lighting System", power: 0.5, duration: 6.0, priority: "Critical", flexible: false },
     ]);
+
+    const [isCollegeMode, setIsCollegeMode] = useState(false);
 
     const [showAddModal, setShowAddModal] = useState(false);
     const [newAppliance, setNewAppliance] = useState({ name: '', power: '', duration: '', priority: 'Medium', flexible: true });
@@ -157,6 +159,30 @@ const Dashboard = () => {
         }
     };
 
+    const handleApplyCollegeData = () => {
+        setIsCollegeMode(true);
+        // Peak month from image (e.g. March/April 2025)
+        setConfig({
+            maxSolarKw: 250.0, // Scale of the college solar meters (Meter 2 is 250kWp)
+            minTemp: 24.0,
+            maxTemp: 40.0,
+            latitude: 19.1, // Approx latitude for the region seen in data (MH, India typically)
+            dayOfYear: 80 // Equinox
+        });
+
+        const collegeAppliances = [
+            { id: Date.now() + 1, name: "Main Computer Lab Cluster", power: 120, duration: 8.0, priority: "Critical", flexible: false },
+            { id: Date.now() + 2, name: "Library Central HVAC", power: 65, duration: 10.0, priority: "High", flexible: true },
+            { id: Date.now() + 3, name: "Hostel Heat Pumps", power: 45, duration: 4.0, priority: "Medium", flexible: true },
+            { id: Date.now() + 4, name: "Admin Block Lighting", power: 30, duration: 8.0, priority: "High", flexible: false },
+            { id: Date.now() + 5, name: "Canteen Refrigeration", power: 25, duration: 24.0, priority: "Critical", flexible: false },
+            { id: Date.now() + 6, name: "Campus EV Fast Chargers", power: 180, duration: 6.0, priority: "Low", flexible: true },
+        ];
+        
+        setAppliances(collegeAppliances);
+        alert("Real College Data (1000kW Scale) Loaded Successfully!");
+    };
+
     return (
         <div className="space-y-8">
             <header className="mb-8">
@@ -200,6 +226,34 @@ const Dashboard = () => {
                     <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-sm text-blue-200">
                         <p className="font-semibold mb-1">💡 Pro Tip</p>
                         If no files are uploaded, the system will use built-in demo datasets for simulation.
+                    </div>
+
+                    <div className="pt-4 border-t border-slate-800">
+                        <h3 className="text-sm font-medium text-slate-400 mb-3 flex items-center gap-2">
+                            <GraduationCap className="w-4 h-4" /> Enterprise Presets
+                        </h3>
+                        <button 
+                            onClick={handleApplyCollegeData}
+                            className={`w-full p-4 rounded-xl border transition-all flex items-center gap-4 group ${
+                                isCollegeMode 
+                                ? 'bg-cyan-500/20 border-cyan-500/50' 
+                                : 'bg-slate-950/50 border-slate-800 hover:border-cyan-500/50'
+                            }`}
+                        >
+                            <div className="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors">
+                                <Building2 className="w-6 h-6 text-cyan-400" />
+                            </div>
+                            <div className="text-left">
+                                <div className="text-white font-semibold flex items-center gap-2">
+                                    Real College Data Map
+                                    {isCollegeMode && <CheckCircle className="w-4 h-4 text-cyan-400" />}
+                                </div>
+                                <div className="text-slate-400 text-xs mt-1">
+                                    Load historical consumption (Slots 1-4) and Solar Generation (M1-M5) from campus records.
+                                </div>
+                            </div>
+                            <BarChart3 className="w-5 h-5 ml-auto text-slate-600 group-hover:text-cyan-400 transition-colors" />
+                        </button>
                     </div>
                 </section>
 
