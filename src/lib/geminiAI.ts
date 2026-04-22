@@ -53,7 +53,7 @@ export async function generateInsights(
 - Carbon Reduction: ${(baselineMetrics.carbon - smartMetrics.carbon).toFixed(2)} kg CO₂
 - Grid Usage Reduction: ${(baselineMetrics.energy.grid - smartMetrics.energy.grid).toFixed(2)} kWh
 ${mlMetrics ? `
-**ML Prediction Accuracy (XGBoost):**
+**ML Prediction Accuracy (LightGBM):**
 - RMSE: ${mlMetrics.test_rmse.toFixed(3)} kW
 - R² Score: ${mlMetrics.test_r2.toFixed(3)}
 ` : ''}

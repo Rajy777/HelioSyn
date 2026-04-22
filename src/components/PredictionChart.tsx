@@ -65,7 +65,7 @@ const PredictionChart: React.FC<PredictionChartProps> = ({
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-400">
                     <TrendingUp className="w-4 h-4" />
-                    <span>XGBoost ML Model</span>
+                    <span>LightGBM AI Model</span>
                 </div>
             </div>
 

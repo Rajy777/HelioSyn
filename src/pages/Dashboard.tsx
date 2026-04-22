@@ -352,7 +352,7 @@ const Dashboard = () => {
                             disabled={!files.solar || isTraining || !apiConnected}
                             className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
-                            {isTraining ? 'Training...' : 'Train XGBoost'}
+                            {isTraining ? 'Training...' : 'Train AI Model'}
                         </button>
                         <p className="text-xs text-slate-500 mt-2">
                             {!files.solar ? 'Upload solar data first' : 'Uses uploaded solar & weather data'}
@@ -363,7 +363,7 @@ const Dashboard = () => {
                     <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800">
                         <h3 className="text-sm text-slate-400 mb-2">About</h3>
                         <p className="text-xs text-slate-500">
-                            XGBoost machine learning model provides accurate solar power predictions based on historical patterns, time features, and weather data.
+                            LightGBM machine learning model provides accurate solar power predictions based on historical patterns, time features, and weather data.
                         </p>
                     </div>
                 </div>

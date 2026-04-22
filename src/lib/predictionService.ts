@@ -1,5 +1,5 @@
 /**
- * Solar Prediction Service - XGBoost ML Integration
+ * Solar Prediction Service - LightGBM ML Integration
  * Handles communication with Python backend for solar power predictions
  */
 
@@ -127,7 +127,7 @@ class PredictionService {
     }
 
     /**
-     * Train the XGBoost model with historical data
+     * Train the LightGBM model with historical data
      */
     async trainModel(request: TrainingRequest): Promise<TrainingResponse> {
         try {

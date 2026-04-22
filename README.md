@@ -1,10 +1,10 @@
 # HelioSyn - AI-Powered Solar Energy Optimization
 
-HelioSyn is an advanced solar energy optimization platform that uses XGBoost machine learning for accurate solar power prediction and intelligent scheduling to maximize renewable energy usage.
+HelioSyn is an advanced solar energy optimization platform that uses LightGBM machine learning for accurate solar power prediction and intelligent scheduling to maximize renewable energy usage.
 
 ## 🌟 Features
 
-- **XGBoost ML Predictions**: Accurate solar power forecasting using gradient boosting
+- **LightGBM ML Predictions**: Accurate solar power forecasting using gradient boosting
 - **Smart Scheduling**: AI-driven appliance scheduling to maximize solar energy usage
 - **Real-time Optimization**: Physics-based simulation with thermal management
 - **Interactive Dashboards**: Beautiful visualizations for energy metrics and predictions
@@ -21,7 +21,7 @@ HelioSyn is an advanced solar energy optimization platform that uses XGBoost mac
 
 ### Backend (Python + Flask)
 - Flask REST API
-- XGBoost for ML predictions
+- LightGBM for ML predictions
 - Pandas for data processing
 - Feature engineering pipeline
 
@@ -96,13 +96,13 @@ npm run backend
 1. Navigate to the Dashboard
 2. Upload your solar generation history CSV
 3. Optionally upload weather data CSV
-4. Click "Train XGBoost" in the ML Solar Prediction section
+4. Click "Train LightGBM" in the ML Solar Prediction section
 5. Wait for training to complete (you'll see metrics like RMSE and R²)
 
 ### 2. View Predictions
 
 1. Navigate to Results page
-2. The XGBoost Solar Power Forecast chart will display automatically
+2. The LightGBM Solar Power Forecast chart will display automatically
 3. View 24-hour predictions with confidence intervals
 4. Compare predicted vs actual values (if available)
 
@@ -170,7 +170,7 @@ GET /api/feature-importance?top_n=10
 
 ## 🧠 ML Model Features
 
-The XGBoost model uses the following features for prediction:
+The LightGBM model uses the following features for prediction:
 
 - **Time Features**: Hour, day of year, month, season
 - **Cyclical Encoding**: Sin/cos transformations for temporal patterns
@@ -199,7 +199,7 @@ After training, the model provides:
 - Carbon footprint reduction metrics
 - Grid dependency visualization
 - Thermal safety comparison
-- XGBoost solar power forecast with confidence intervals
+- LightGBM solar power forecast with confidence intervals
 - Detailed job execution timeline
 
 ## 🛠️ Development
@@ -209,7 +209,7 @@ After training, the model provides:
 HelioSyn/
 ├── backend/
 │   ├── api.py              # Flask REST API
-│   ├── model.py            # XGBoost model
+│   ├── model.py            # LightGBM model
 │   ├── data_processor.py   # Feature engineering
 │   ├── requirements.txt    # Python dependencies
 │   └── README.md           # Backend documentation
@@ -269,4 +269,4 @@ For issues and questions, please open an issue on GitHub.
 
 ---
 
-Built with ❤️ using React, TypeScript, Python, and XGBoost
+Built with ❤️ using React, TypeScript, Python, and LightGBM

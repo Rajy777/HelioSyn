@@ -1,6 +1,6 @@
 # HelioSyn Backend - Solar Prediction API
 
-XGBoost-based solar power prediction service for HelioSyn.
+LightGBM-based solar power prediction service for HelioSyn.
 
 ## Setup
 
@@ -86,7 +86,7 @@ GET /api/feature-importance?top_n=10
 
 ## Model Features
 
-The XGBoost model uses the following features:
+The LightGBM model uses the following features:
 - **Time Features**: Hour, day of year, month, season
 - **Cyclical Encoding**: Sin/cos transformations for temporal patterns
 - **Weather**: Temperature data

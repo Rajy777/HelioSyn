@@ -245,7 +245,7 @@ const Results = () => {
             {mlPredictions.length > 0 && (
                 <PredictionChart
                     predictions={mlPredictions}
-                    title="XGBoost Solar Power Forecast (Next 24 Hours)"
+                    title="LightGBM Solar Power Forecast (Next 24 Hours)"
                     showConfidence={true}
                 />
             )}
@@ -253,7 +253,7 @@ const Results = () => {
             {mlLoading && (
                 <div className="p-6 rounded-3xl bg-slate-900/40 border border-slate-800 backdrop-blur-md text-center py-12">
                     <div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-slate-400">Consulting XGBoost for solar forecast...</p>
+                    <p className="text-slate-400">Consulting AI Model for solar forecast...</p>
                 </div>
             )}
 
