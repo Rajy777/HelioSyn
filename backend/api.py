@@ -72,21 +72,17 @@ def train_model():
         print(f"Received {len(solar_data)} solar data points")
         
         # Prepare training data
-        df, feature_cols = processor.prepare_training_data(
+        X, y, feature_cols = processor.prepare_training_data(
             solar_data=solar_data,
             weather_data=weather_data,
             include_lags=True,
             include_rolling=True
         )
         
-        print(f"Prepared {len(df)} samples with {len(feature_cols)} features")
-        
-        # Extract features and target
-        X = df[feature_cols]
-        y = df['value']
+        print(f"Prepared {len(X)} samples with {len(feature_cols)} features")
         
         # Train the model
-        metrics = model.train(X, y)
+        metrics = model.train(X, y, feature_names=feature_cols)
         
         return jsonify({
             'success': True,

@@ -2,7 +2,6 @@
 XGBoost model for solar power prediction
 """
 import numpy as np
-import pandas as pd
 import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -45,8 +44,9 @@ class SolarPredictionModel:
     
     def train(
         self, 
-        X: pd.DataFrame, 
-        y: pd.Series,
+        X: np.ndarray, 
+        y: np.ndarray,
+        feature_names: List[str],
         test_size: float = 0.2,
         validation_split: float = 0.1
     ) -> Dict[str, float]:
@@ -101,17 +101,13 @@ class SolarPredictionModel:
         }
         
         # Store feature importance (approximation for HistGradientBoosting)
-        # Note: HistGradientBoosting doesn't have a direct feature_importances_ attribute 
-        # until scikit-learn 1.0 but it varies. 
-        # We'll use a placeholder or permutation importance if needed, 
-        # but for simplicity and bundle size, we'll return a simple mapping if available.
         if hasattr(self.model, 'feature_importances_'):
             self.feature_importance = {
-                name: float(imp) for name, imp in zip(X.columns, self.model.feature_importances_)
+                name: float(imp) for name, imp in zip(feature_names, self.model.feature_importances_)
             }
         else:
             # Placeholder for importance
-            self.feature_importance = {name: 1.0/len(X.columns) for name in X.columns}
+            self.feature_importance = {name: 1.0/len(feature_names) for name in feature_names}
         
         self.is_trained = True
         
@@ -126,12 +122,12 @@ class SolarPredictionModel:
         
         return self.training_metrics
     
-    def predict(self, X: pd.DataFrame) -> np.ndarray:
+    def predict(self, X: np.ndarray) -> np.ndarray:
         """
         Make predictions using the trained model
         
         Args:
-            X: Feature matrix
+            X: Feature matrix (NumPy array)
             
         Returns:
             Array of predictions
@@ -146,14 +142,13 @@ class SolarPredictionModel:
         
         return predictions
 
-    def predict_recursive(self, X_template: pd.DataFrame) -> np.ndarray:
+    def predict_recursive(self, X: np.ndarray) -> np.ndarray:
         """
         Make recursive multi-step predictions.
         Updates lag features internally for each step.
         
         Args:
-            X_template: Feature matrix with base features (time, weather) 
-                      and initial lag/rolling features for the first row.
+            X: Feature matrix with base features
             
         Returns:
             Array of recursive predictions
@@ -161,48 +156,45 @@ class SolarPredictionModel:
         if not self.is_trained:
             raise ValueError("Model must be trained before making predictions")
             
-        X = X_template.copy()
-        
-        # Ensure all columns are float to prevent TypeError: Invalid value for dtype 'int64'
-        for col in X.columns:
-            if X[col].dtype == 'int64' or X[col].dtype == 'int32':
-                X[col] = X[col].astype(float)
+        X = X.copy()
         
         predictions = []
         
+        # Identify indices of lag columns
+        feature_names = self.feature_columns
+        lag_indices = {
+            f'value_lag_{lag}': feature_names.index(f'value_lag_{lag}') 
+            for lag in [1, 2, 3, 24] if f'value_lag_{lag}' in feature_names
+        }
+        
+        rolling_mean_indices = {
+            f'value_rolling_mean_{w}': feature_names.index(f'value_rolling_mean_{w}')
+            for w in [3, 6, 12] if f'value_rolling_mean_{w}' in feature_names
+        }
+        
         for i in range(len(X)):
             # 1. Predict current step
-            current_X = X.iloc[[i]]
+            current_X = X[[i]]
             pred = self.model.predict(current_X)[0]
             pred = max(0, pred)
             predictions.append(pred)
             
             # 2. Update lags for FUTURE rows
-            # value_lag_1 is the prediction we just made
-            # value_lag_2 is what was lag_1
-            # and so on
             for j in range(i + 1, len(X)):
                 dist = j - i
-                if dist == 1:
-                    if 'value_lag_1' in X.columns: X.iloc[j, X.columns.get_loc('value_lag_1')] = pred
-                elif dist == 2:
-                    if 'value_lag_2' in X.columns: X.iloc[j, X.columns.get_loc('value_lag_2')] = pred
-                elif dist == 3:
-                    if 'value_lag_3' in X.columns: X.iloc[j, X.columns.get_loc('value_lag_3')] = pred
-                elif dist == 24:
-                    if 'value_lag_24' in X.columns: X.iloc[j, X.columns.get_loc('value_lag_24')] = pred
+                lag_key = f'value_lag_{dist}'
+                if lag_key in lag_indices:
+                    X[j, lag_indices[lag_key]] = pred
                     
-                # Update rolling means as well (approximate)
-                for window in [3, 6, 12]:
-                    mean_col = f'value_rolling_mean_{window}'
-                    if mean_col in X.columns:
-                        # Simple moving average update using recent predictions
-                        recent = predictions[-window:]
-                        X.iloc[j, X.columns.get_loc(mean_col)] = np.mean(recent)
+                # Update rolling means proxy
+                for w_key, w_idx in rolling_mean_indices.items():
+                    window = int(w_key.split('_')[-1])
+                    recent = predictions[-window:]
+                    X[j, w_idx] = np.mean(recent)
                         
         return np.array(predictions)
 
-    def predict_with_confidence(self, X: pd.DataFrame, n_iterations: int = 100) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def predict_with_confidence(self, X: np.ndarray, n_iterations: int = 100) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Make predictions with confidence intervals.
         Uses recursive prediction for the mean.
