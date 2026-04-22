@@ -115,7 +115,7 @@ const Dashboard = () => {
             return;
         }
 
-        setIsTraining(true);
+        setIsAiTraining(true);
         try {
             // Parse solar and weather data
             const solarDataRaw = await parseCSV(files.solar, 'solar');
