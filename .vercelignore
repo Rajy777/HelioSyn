@@ -5,10 +5,7 @@ venv/
 backend/venv/
 
 # Build artifacts
-dist/
 dist-ssr/
-src/
-public/
 *.local
 
 # Logs
