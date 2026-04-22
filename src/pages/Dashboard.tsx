@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import FileUpload from '../components/FileUpload';
-import { Settings, Play, Plus, Trash2, Cpu, Zap, Brain, CheckCircle, XCircle } from 'lucide-react';
+import { Settings, Play, Plus, Trash2, Cpu, Zap, Brain, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { parseCSV } from '../lib/csvParser';
 import { X, GraduationCap, Building2, BarChart3 } from 'lucide-react';
