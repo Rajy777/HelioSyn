@@ -369,9 +369,14 @@ const Dashboard = () => {
                 </div>
 
                 {!apiConnected && (
-                    <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-sm text-yellow-200">
-                        <p className="font-semibold mb-1">⚠️ Python API Not Running</p>
-                        <p className="text-xs">Start the backend server: <code className="bg-slate-900 px-2 py-0.5 rounded">cd backend && python api.py</code></p>
+                    <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-sm text-yellow-200 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+                            <AlertCircle className="w-5 h-5 text-yellow-500" />
+                        </div>
+                        <div>
+                            <p className="font-semibold mb-1 text-yellow-500">ML Engine Connecting...</p>
+                            <p className="text-xs text-yellow-200/70">The serverless backend is initializing. This may take 10-15 seconds on the first load.</p>
+                        </div>
                     </div>
                 )}
             </section>

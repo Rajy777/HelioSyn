@@ -80,8 +80,8 @@ class PredictionService {
     private cacheTimeout: number = 5 * 60 * 1000; // 5 minutes
 
     constructor() {
-        // Get API URL from environment variable or use relative /api path (standard for Vercel/proxies)
-        this.baseUrl = import.meta.env.VITE_PREDICTION_API_URL || '/api';
+        // Use empty string because the fetch methods already prepend '/api' to the paths
+        this.baseUrl = '';
         this.cache = new Map();
     }
 
