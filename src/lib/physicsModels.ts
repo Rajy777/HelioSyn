@@ -44,8 +44,6 @@ export const calculateIrradiance = (
     // If sun is down, 0 irradiance
     if (sinAlpha <= 0) return 0.0;
 
-    const alpha = Math.asin(sinAlpha); // Radians
-
     // 4. Beam Normal Irradiance (I_bn) - ASHRAE Model
     // Constants for "Average Clear Sky"
     const A = 1160; // Apparent solar irradiation at air mass 0 (W/m2)

@@ -244,34 +244,61 @@ class SolarPredictionModel:
     def _save_model(self):
         """Save the trained model to disk"""
         try:
-            # Create models directory if it doesn't exist
-            os.makedirs(os.path.dirname(self.model_path), exist_ok=True)
-            
-            # Save model
-            self.model.save_model(self.model_path)
-            
-            # Save metadata
-            metadata = {
-                'feature_importance': self.feature_importance,
-                'training_metrics': self.training_metrics,
-                'is_trained': self.is_trained,
-                'feature_columns': list(self.feature_importance.keys())
-            }
-            joblib.dump(metadata, self.model_path.replace('.json', '_metadata.pkl'))
-            
-            print(f"Model saved to {self.model_path}")
+            # Ensure model path is absolute to prevent issues in serverless environments
+            if not os.path.isabs(self.model_path):
+                 base_dir = os.path.dirname(os.path.abspath(__file__))
+                 full_path = os.path.join(base_dir, self.model_path)
+            else:
+                 full_path = self.model_path
+
+            try:
+                # Create models directory if it doesn't exist
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                
+                # Save model
+                self.model.save_model(full_path)
+                
+                # Save metadata
+                metadata = {
+                    'feature_importance': self.feature_importance,
+                    'training_metrics': self.training_metrics,
+                    'is_trained': self.is_trained,
+                    'feature_columns': list(self.feature_importance.keys())
+                }
+                joblib.dump(metadata, full_path.replace('.json', '_metadata.pkl'))
+                
+                print(f"Model saved to {full_path}")
+            except (IOError, PermissionError) as pe:
+                print(f"Read-only filesystem detected ({pe}). Attempting to save to /tmp...")
+                # Fallback to /tmp for ephemeral persistence in serverless environments
+                tmp_path = os.path.join('/tmp', os.path.basename(full_path))
+                self.model.save_model(tmp_path)
+                joblib.dump(metadata, tmp_path.replace('.json', '_metadata.pkl'))
+                print(f"Model saved temporarily to {tmp_path}")
+                
         except Exception as e:
             print(f"Error saving model: {e}")
     
     def _load_model(self):
         """Load a trained model from disk"""
         try:
-            if os.path.exists(self.model_path):
+            # Handle relative paths in serverless environments
+            if not os.path.isabs(self.model_path):
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                full_path = os.path.join(base_dir, self.model_path)
+            else:
+                full_path = self.model_path
+
+            # Check if a newer version exists in /tmp (ephemeral persistence)
+            tmp_path = os.path.join('/tmp', os.path.basename(full_path))
+            load_path = tmp_path if os.path.exists(tmp_path) else full_path
+
+            if os.path.exists(load_path):
                 self.model = xgb.XGBRegressor()
-                self.model.load_model(self.model_path)
+                self.model.load_model(load_path)
                 
                 # Load metadata
-                metadata_path = self.model_path.replace('.json', '_metadata.pkl')
+                metadata_path = load_path.replace('.json', '_metadata.pkl')
                 if os.path.exists(metadata_path):
                     metadata = joblib.load(metadata_path)
                     self.feature_importance = metadata.get('feature_importance', {})
@@ -279,7 +306,7 @@ class SolarPredictionModel:
                     self.is_trained = metadata.get('is_trained', False)
                     self.feature_columns = metadata.get('feature_columns', list(self.feature_importance.keys()))
                 
-                print(f"Model loaded from {self.model_path}")
+                print(f"Model loaded from {load_path}")
         except Exception as e:
             print(f"No existing model found or error loading: {e}")
     

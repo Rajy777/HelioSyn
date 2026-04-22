@@ -1,6 +1,6 @@
 
 import React, { useCallback } from 'react';
-import { UploadCloud, CheckCircle, FileType } from 'lucide-react';
+import { UploadCloud, CheckCircle } from 'lucide-react';
 
 interface FileUploadProps {
     label: string;

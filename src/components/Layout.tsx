@@ -2,7 +2,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Zap, BrainCircuit, LogOut, Sun } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
     const location = useLocation();
@@ -13,8 +12,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         { icon: BrainCircuit, label: 'AI Insights', path: '/ai-insights' },
     ];
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
+    const handleExit = () => {
         window.location.href = '/';
     };
 
@@ -50,7 +48,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 </nav>
 
                 <button
-                    onClick={() => window.location.href = '/'}
+                    onClick={handleExit}
                     className="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors mt-auto"
                 >
                     <LogOut className="w-5 h-5" />
