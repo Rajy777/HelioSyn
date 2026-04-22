@@ -374,8 +374,8 @@ const Dashboard = () => {
                             <AlertCircle className="w-5 h-5 text-yellow-500" />
                         </div>
                         <div>
-                            <p className="font-semibold mb-1 text-yellow-500">ML Engine Connecting...</p>
-                            <p className="text-xs text-yellow-200/70">The serverless backend is initializing. This may take 10-15 seconds on the first load.</p>
+                            <p className="font-semibold mb-1 text-yellow-500">AI Model Engine Connecting...</p>
+                            <p className="text-xs text-yellow-200/70">The LightGBM backend is initializing. This may take 10-15 seconds on the first load.</p>
                         </div>
                     </div>
                 )}
