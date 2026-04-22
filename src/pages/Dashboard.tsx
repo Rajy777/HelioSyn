@@ -39,25 +39,25 @@ const Dashboard = () => {
 
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // ML Prediction State
-    const [mlStatus, setMlStatus] = useState<{ is_trained: boolean; metrics?: any }>({ is_trained: false });
-    const [isTraining, setIsTraining] = useState(false);
+    // AI Prediction State
+    const [aiStatus, setAiStatus] = useState<{ is_trained: boolean; metrics?: any }>({ is_trained: false });
+    const [isAiTraining, setIsAiTraining] = useState(false);
     const [apiConnected, setApiConnected] = useState(false);
 
-    // Check ML API status on mount
+    // Check AI API status on mount
     useEffect(() => {
-        const checkMLStatus = async () => {
+        const checkAIStatus = async () => {
             const healthy = await predictionService.healthCheck();
             setApiConnected(healthy);
 
             if (healthy) {
                 const status = await predictionService.getModelStatus();
                 if (status.success && status.data) {
-                    setMlStatus(status.data);
+                    setAiStatus(status.data);
                 }
             }
         };
-        checkMLStatus();
+        checkAIStatus();
     }, []);
 
     const handleFileSelect = (key: string) => (file: File) => {
@@ -109,7 +109,7 @@ const Dashboard = () => {
         setAppliances(appliances.filter(a => a.id !== id));
     };
 
-    const handleTrainMLModel = async () => {
+    const handleTrainAIModel = async () => {
         if (!files.solar) {
             alert('Please upload solar generation data first');
             return;
@@ -146,7 +146,7 @@ const Dashboard = () => {
                 // Update status
                 const status = await predictionService.getModelStatus();
                 if (status.success && status.data) {
-                    setMlStatus(status.data);
+                    setAiStatus(status.data);
                 }
             } else {
                 alert(`Training failed: ${response.error}`);
@@ -155,7 +155,7 @@ const Dashboard = () => {
             console.error('Training error:', error);
             alert('Failed to train model. Make sure the Python API is running.');
         } finally {
-            setIsTraining(false);
+            setIsAiTraining(false);
         }
     };
 
@@ -303,12 +303,12 @@ const Dashboard = () => {
                 </section>
             </div>
 
-            {/* ML Prediction Training Section */}
+            {/* AI Prediction Training Section */}
             <section className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-800 p-6">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <Brain className="w-5 h-5 text-purple-400" />
-                        <h2 className="text-xl font-semibold text-white">ML Solar Prediction</h2>
+                        <h2 className="text-xl font-semibold text-white">AI Solar Prediction</h2>
                     </div>
                     <div className="flex items-center gap-2">
                         {apiConnected ? (
@@ -329,13 +329,13 @@ const Dashboard = () => {
                     {/* Status Card */}
                     <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800">
                         <h3 className="text-sm text-slate-400 mb-2">Model Status</h3>
-                        {mlStatus.is_trained ? (
+                        {aiStatus.is_trained ? (
                             <div>
                                 <p className="text-green-400 font-semibold mb-2">✓ Trained</p>
-                                {mlStatus.metrics && (
+                                {aiStatus.metrics && (
                                     <div className="text-xs text-slate-500 space-y-1">
-                                        <p>RMSE: {mlStatus.metrics.test_rmse?.toFixed(3)} kW</p>
-                                        <p>R²: {mlStatus.metrics.test_r2?.toFixed(3)}</p>
+                                        <p>RMSE: {aiStatus.metrics.test_rmse?.toFixed(3)} kW</p>
+                                        <p>R²: {aiStatus.metrics.test_r2?.toFixed(3)}</p>
                                     </div>
                                 )}
                             </div>
@@ -348,11 +348,11 @@ const Dashboard = () => {
                     <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800">
                         <h3 className="text-sm text-slate-400 mb-2">Train Model</h3>
                         <button
-                            onClick={handleTrainMLModel}
-                            disabled={!files.solar || isTraining || !apiConnected}
+                            onClick={handleTrainAIModel}
+                            disabled={!files.solar || isAiTraining || !apiConnected}
                             className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
-                            {isTraining ? 'Training...' : 'Train AI Model'}
+                            {isAiTraining ? 'Training...' : 'Train AI Model'}
                         </button>
                         <p className="text-xs text-slate-500 mt-2">
                             {!files.solar ? 'Upload solar data first' : 'Uses uploaded solar & weather data'}

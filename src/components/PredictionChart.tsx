@@ -184,7 +184,7 @@ const PredictionChart: React.FC<PredictionChartProps> = ({
             <div className="mt-4 pt-4 border-t border-slate-800 flex flex-wrap gap-4 text-xs text-slate-400">
                 <div className="flex items-center gap-2">
                     <div className="w-8 h-0.5 bg-cyan-400"></div>
-                    <span>ML Prediction</span>
+                    <span>AI Prediction</span>
                 </div>
                 {actualData && actualData.length > 0 && (
                     <div className="flex items-center gap-2">

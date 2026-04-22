@@ -177,7 +177,7 @@ const Home = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[
-                            { icon: TrendingUp, title: "Solar Forecasting", desc: "Predict generation with ML-powered weather analysis." },
+                            { icon: TrendingUp, title: "Solar Forecasting", desc: "Predict generation with AI-powered weather analysis." },
                             { icon: Zap, title: "Smart Scheduling", desc: "Shift loads to peak solar hours automatically." },
                             { icon: ShieldCheck, title: "Explainable AI", desc: "Understand every decision the system makes." },
                             { icon: Battery, title: "Battery Support", desc: "Optimize charge/discharge cycles for storage." },

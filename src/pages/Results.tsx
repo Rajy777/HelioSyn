@@ -41,15 +41,15 @@ const Results = () => {
         return { metrics, baselineMetrics, data };
     }, []);
 
-    // ML Prediction State
-    const [mlPredictions, setMlPredictions] = useState<PredictionResult[]>([]);
-    const [mlLoading, setMlLoading] = useState(false);
-    const [mlError, setMlError] = useState<string | null>(null);
+    // AI Prediction State
+    const [aiPredictions, setAiPredictions] = useState<PredictionResult[]>([]);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState<string | null>(null);
 
-    // Load ML predictions on mount with context from simulation
+    // Load AI predictions on mount with context from simulation
     useEffect(() => {
         const loadPredictions = async () => {
-            setMlLoading(true);
+            setAiLoading(true);
             try {
                 // Get last 24h of simulation data for context
                 const solarLogs = metrics.logs.solar;
@@ -71,37 +71,35 @@ const Results = () => {
                     value: tempLogs[i]
                 })).slice(-24); // Last 24 hours of weather
 
-                // Get last timestamp for seasonal alignment (try to find a real date string)
+                // Get last timestamp for seasonal alignment
                 const storedData = localStorage.getItem('helioSynData');
                 const parsed = storedData ? JSON.parse(storedData) : null;
                 const solarFile = parsed?.files?.solar;
                 let lastTimestamp = undefined;
 
                 if (solarFile && solarFile.length > 0) {
-                    // Try to find the most recent valid timestamp in the uploaded data
                     const latestPoint = solarFile[solarFile.length - 1];
                     if (latestPoint.timestamp && String(latestPoint.timestamp).includes('-')) {
                         lastTimestamp = String(latestPoint.timestamp);
                     }
                 }
 
-                // Fallback to hour number only if no real date found (though backend is now robust)
                 if (!lastTimestamp) {
                     lastTimestamp = timeLogs[lastIdx] !== null ? String(timeLogs[lastIdx]) : undefined;
                 }
 
                 const response = await predictionService.predict24Hours(weatherContext, lastKnownValues, lastTimestamp);
                 if (response.success && response.predictions) {
-                    setMlPredictions(response.predictions);
-                    setMlError(null);
+                    setAiPredictions(response.predictions);
+                    setAiError(null);
                 } else {
-                    setMlError(response.error || 'Failed to generate predictions');
+                    setAiError(response.error || 'Failed to generate predictions');
                 }
             } catch (error) {
-                console.error('Failed to load ML predictions:', error);
-                setMlError('Machine Learning API is not responding. Ensure the backend is running.');
+                console.error('Failed to load AI predictions:', error);
+                setAiError('AI Model Engine is not responding. Ensure the backend is running.');
             } finally {
-                setMlLoading(false);
+                setAiLoading(false);
             }
         };
         loadPredictions();
@@ -241,26 +239,26 @@ const Results = () => {
                 </div>
             </div>
 
-            {/* ML Solar Prediction Visualization */}
-            {mlPredictions.length > 0 && (
+            {/* AI Solar Prediction Visualization */}
+            {aiPredictions.length > 0 && (
                 <PredictionChart
-                    predictions={mlPredictions}
+                    predictions={aiPredictions}
                     title="LightGBM Solar Power Forecast (Next 24 Hours)"
                     showConfidence={true}
                 />
             )}
 
-            {mlLoading && (
+            {aiLoading && (
                 <div className="p-6 rounded-3xl bg-slate-900/40 border border-slate-800 backdrop-blur-md text-center py-12">
                     <div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-slate-400">Consulting AI Model for solar forecast...</p>
                 </div>
             )}
 
-            {mlError && !mlLoading && (
+            {aiError && !aiLoading && (
                 <div className="p-6 rounded-3xl bg-red-500/10 border border-red-500/20 backdrop-blur-md text-center">
                     <p className="text-red-400 font-medium mb-1">Prediction Error</p>
-                    <p className="text-red-400/60 text-sm">{mlError}</p>
+                    <p className="text-red-400/60 text-sm">{aiError}</p>
                 </div>
             )}
 
