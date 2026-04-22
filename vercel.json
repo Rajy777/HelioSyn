@@ -13,9 +13,5 @@
   "env": {
     "PYTHONPATH": "."
   },
-  "functions": {
-    "api/*.py": {
-      "excludeFiles": "{node_modules,src,dist,public,backend/venv,backend/__pycache__,.git,.github,*.json,*.js,*.ts,*.sql,*.md,*.yaml,*.yml,*.csv}/**"
-    }
-  }
+
 }

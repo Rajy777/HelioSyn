@@ -143,22 +143,19 @@ class SolarDataProcessor:
             all_keys.update(row.keys())
         self.feature_columns = sorted([k for k in all_keys if k not in exclude])
         
-        # Build X and y, dropping rows with NaN (from lags)
+        # Build X and y, filling NaN (from lags) with 0.0 instead of dropping rows
         X_list = []
         y_list = []
         for row in data:
             features = []
-            has_nan = False
             for col in self.feature_columns:
                 val = row.get(col, 0.0)
                 if isinstance(val, float) and np.isnan(val):
-                    has_nan = True
-                    break
+                    val = 0.0  # Fill NaNs with 0.0 to prevent dropping data
                 features.append(float(val))
             
-            if not has_nan:
-                X_list.append(features)
-                y_list.append(row['value'])
+            X_list.append(features)
+            y_list.append(row['value'])
                 
         return np.array(X_list), np.array(y_list), self.feature_columns
     
