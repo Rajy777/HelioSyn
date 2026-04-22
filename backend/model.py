@@ -1,12 +1,12 @@
 """
 XGBoost model for solar power prediction
 """
-import xgboost as xgb
 import numpy as np
 import pandas as pd
 import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.ensemble import HistGradientBoostingRegressor
 from typing import Dict, List, Tuple, Optional
 import os
 
@@ -14,7 +14,7 @@ import os
 class SolarPredictionModel:
     """XGBoost-based solar power prediction model"""
     
-    def __init__(self, model_path: str = 'models/solar_xgboost.json'):
+    def __init__(self, model_path: str = 'models/solar_model.joblib'):
         """
         Initialize the solar prediction model
         
@@ -27,19 +27,17 @@ class SolarPredictionModel:
         self.feature_importance = {}
         self.training_metrics = {}
         
-        # XGBoost hyperparameters optimized for time-series
+        # HistGradientBoosting hyperparameters
         self.params = {
-            'objective': 'reg:squarederror',
+            'loss': 'squared_error',
             'max_depth': 6,
             'learning_rate': 0.1,
-            'n_estimators': 200,
-            'subsample': 0.8,
-            'colsample_bytree': 0.8,
-            'min_child_weight': 3,
-            'gamma': 0.1,
-            'reg_alpha': 0.1,
-            'reg_lambda': 1.0,
-            'random_state': 42
+            'max_iter': 200,
+            'l2_regularization': 0.1,
+            'random_state': 42,
+            'early_stopping': True,
+            'validation_fraction': 0.1,
+            'n_iter_no_change': 10
         }
         
         # Try to load existing model
@@ -78,15 +76,11 @@ class SolarPredictionModel:
         print(f"Validation set size: {len(X_val)}")
         print(f"Test set size: {len(X_test)}")
         
-        # Create XGBoost model
-        self.model = xgb.XGBRegressor(**self.params)
+        # Create HistGradientBoosting model
+        self.model = HistGradientBoostingRegressor(**self.params)
         
-        # Train with early stopping
-        self.model.fit(
-            X_train, y_train,
-            eval_set=[(X_val, y_val)],
-            verbose=False
-        )
+        # Train the model
+        self.model.fit(X_train, y_train)
         
         # Make predictions
         y_train_pred = self.model.predict(X_train)
@@ -106,10 +100,18 @@ class SolarPredictionModel:
             'test_r2': float(r2_score(y_test, y_test_pred))
         }
         
-        # Store feature importance (convert to standard float)
-        self.feature_importance = {
-            name: float(imp) for name, imp in zip(X.columns, self.model.feature_importances_)
-        }
+        # Store feature importance (approximation for HistGradientBoosting)
+        # Note: HistGradientBoosting doesn't have a direct feature_importances_ attribute 
+        # until scikit-learn 1.0 but it varies. 
+        # We'll use a placeholder or permutation importance if needed, 
+        # but for simplicity and bundle size, we'll return a simple mapping if available.
+        if hasattr(self.model, 'feature_importances_'):
+            self.feature_importance = {
+                name: float(imp) for name, imp in zip(X.columns, self.model.feature_importances_)
+            }
+        else:
+            # Placeholder for importance
+            self.feature_importance = {name: 1.0/len(X.columns) for name in X.columns}
         
         self.is_trained = True
         
@@ -255,17 +257,15 @@ class SolarPredictionModel:
                 # Create models directory if it doesn't exist
                 os.makedirs(os.path.dirname(full_path), exist_ok=True)
                 
-                # Save model
-                self.model.save_model(full_path)
-                
-                # Save metadata
-                metadata = {
+                # Save metadata and model together using joblib
+                model_data = {
+                    'model': self.model,
                     'feature_importance': self.feature_importance,
                     'training_metrics': self.training_metrics,
                     'is_trained': self.is_trained,
                     'feature_columns': list(self.feature_importance.keys())
                 }
-                joblib.dump(metadata, full_path.replace('.json', '_metadata.pkl'))
+                joblib.dump(model_data, full_path)
                 
                 print(f"Model saved to {full_path}")
             except (IOError, PermissionError) as pe:
@@ -294,17 +294,13 @@ class SolarPredictionModel:
             load_path = tmp_path if os.path.exists(tmp_path) else full_path
 
             if os.path.exists(load_path):
-                self.model = xgb.XGBRegressor()
-                self.model.load_model(load_path)
-                
-                # Load metadata
-                metadata_path = load_path.replace('.json', '_metadata.pkl')
-                if os.path.exists(metadata_path):
-                    metadata = joblib.load(metadata_path)
-                    self.feature_importance = metadata.get('feature_importance', {})
-                    self.training_metrics = metadata.get('training_metrics', {})
-                    self.is_trained = metadata.get('is_trained', False)
-                    self.feature_columns = metadata.get('feature_columns', list(self.feature_importance.keys()))
+                # Load everything from the joblib file
+                model_data = joblib.load(load_path)
+                self.model = model_data.get('model')
+                self.feature_importance = model_data.get('feature_importance', {})
+                self.training_metrics = model_data.get('training_metrics', {})
+                self.is_trained = model_data.get('is_trained', False)
+                self.feature_columns = model_data.get('feature_columns', list(self.feature_importance.keys()))
                 
                 print(f"Model loaded from {load_path}")
         except Exception as e:

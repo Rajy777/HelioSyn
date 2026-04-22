@@ -12,5 +12,10 @@
   ],
   "env": {
     "PYTHONPATH": "."
+  },
+  "functions": {
+    "api/*.py": {
+      "excludeFiles": "{node_modules,backend/venv,backend/__pycache__,public}/**"
+    }
   }
 }
