@@ -1,5 +1,5 @@
 /**
- * Solar Prediction Service - LightGBM ML Integration
+ * Solar Prediction Service - Random Forest AI Integration
  * Handles communication with Python backend for solar power predictions
  */
 
@@ -127,7 +127,7 @@ class PredictionService {
     }
 
     /**
-     * Train the LightGBM model with historical data
+     * Train the Random Forest model with historical data
      */
     async trainModel(request: TrainingRequest): Promise<TrainingResponse> {
         try {

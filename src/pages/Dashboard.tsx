@@ -363,7 +363,7 @@ const Dashboard = () => {
                     <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800">
                         <h3 className="text-sm text-slate-400 mb-2">About</h3>
                         <p className="text-xs text-slate-500">
-                            LightGBM machine learning model provides accurate solar power predictions based on historical patterns, time features, and weather data.
+                            Random Forest AI model provides accurate solar power predictions based on historical patterns, time features, and weather data.
                         </p>
                     </div>
                 </div>
@@ -375,7 +375,7 @@ const Dashboard = () => {
                         </div>
                         <div>
                             <p className="font-semibold mb-1 text-yellow-500">AI Model Engine Connecting...</p>
-                            <p className="text-xs text-yellow-200/70">The LightGBM backend is initializing. This may take 10-15 seconds on the first load.</p>
+                            <p className="text-xs text-yellow-200/70">The Random Forest backend is initializing. This may take 10-15 seconds on the first load.</p>
                         </div>
                     </div>
                 )}

@@ -243,7 +243,7 @@ const Results = () => {
             {aiPredictions.length > 0 && (
                 <PredictionChart
                     predictions={aiPredictions}
-                    title="LightGBM Solar Power Forecast (Next 24 Hours)"
+                    title="Random Forest Solar Power Forecast (Next 24 Hours)"
                     showConfidence={true}
                 />
             )}
