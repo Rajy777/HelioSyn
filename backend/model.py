@@ -1,19 +1,48 @@
 """
-XGBoost model for solar power prediction
+LightGBM model for solar power prediction
+Replacing Scikit-Learn to reduce bundle size and remove Scipy dependency.
 """
 import numpy as np
 import pickle
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from sklearn.ensemble import HistGradientBoostingRegressor
-from typing import Dict, List, Tuple, Optional
 import os
+import lightgbm as lgb
+from typing import Dict, List, Tuple, Optional
 
+def manual_train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False):
+    """Manual NumPy-based train_test_split to remove sklearn dependency"""
+    if shuffle:
+        np.random.seed(random_state)
+        indices = np.random.permutation(len(X))
+        X = X[indices]
+        y = y[indices]
+    
+    split_idx = int(len(X) * (1 - test_size))
+    return X[:split_idx], X[split_idx:], y[:split_idx], y[split_idx:]
+
+def calculate_metrics(y_true, y_pred):
+    """Manual metrics calculation to remove sklearn dependency"""
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    
+    mse = np.mean((y_true - y_pred)**2)
+    rmse = np.sqrt(mse)
+    mae = np.mean(np.abs(y_true - y_pred))
+    
+    # R-squared
+    ss_res = np.sum((y_true - y_pred)**2)
+    ss_tot = np.sum((y_true - np.mean(y_true))**2)
+    r2 = 1 - (ss_res / (ss_tot + 1e-10))
+    
+    return {
+        'rmse': float(rmse),
+        'mae': float(mae),
+        'r2': float(r2)
+    }
 
 class SolarPredictionModel:
-    """XGBoost-based solar power prediction model"""
+    """LightGBM-based solar power prediction model"""
     
-    def __init__(self, model_path: str = 'models/solar_model.joblib'):
+    def __init__(self, model_path: str = 'models/solar_model.pkl'):
         """
         Initialize the solar prediction model
         
@@ -25,18 +54,21 @@ class SolarPredictionModel:
         self.is_trained = False
         self.feature_importance = {}
         self.training_metrics = {}
+        self.feature_columns = []
         
-        # HistGradientBoosting hyperparameters
+        # LightGBM hyperparameters
         self.params = {
-            'loss': 'squared_error',
-            'max_depth': 6,
-            'learning_rate': 0.1,
-            'max_iter': 200,
-            'l2_regularization': 0.1,
+            'objective': 'regression',
+            'metric': 'rmse',
+            'boosting_type': 'gbdt',
+            'num_leaves': 31,
+            'learning_rate': 0.05,
+            'feature_fraction': 0.9,
+            'bagging_fraction': 0.8,
+            'bagging_freq': 5,
+            'verbose': -1,
             'random_state': 42,
-            'early_stopping': True,
-            'validation_fraction': 0.1,
-            'n_iter_no_change': 10
+            'n_estimators': 200
         }
         
         # Try to load existing model
@@ -51,113 +83,81 @@ class SolarPredictionModel:
         validation_split: float = 0.1
     ) -> Dict[str, float]:
         """
-        Train the XGBoost model
-        
-        Args:
-            X: Feature matrix
-            y: Target variable (solar power output)
-            test_size: Proportion of data for testing
-            validation_split: Proportion of training data for validation
-            
-        Returns:
-            Dictionary of training metrics
+        Train the LightGBM model
         """
+        self.feature_columns = feature_names
+        
         # Split data into train and test
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=42, shuffle=False
+        X_train, X_test, y_train, y_test = manual_train_test_split(
+            X, y, test_size=test_size, shuffle=False
         )
         
         # Further split training data for validation
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_train, y_train, test_size=validation_split, random_state=42, shuffle=False
+        X_train, X_val, y_train, y_val = manual_train_test_split(
+            X_train, y_train, test_size=validation_split, shuffle=False
         )
         
         print(f"Training set size: {len(X_train)}")
         print(f"Validation set size: {len(X_val)}")
         print(f"Test set size: {len(X_test)}")
         
-        # Create HistGradientBoosting model
-        self.model = HistGradientBoostingRegressor(**self.params)
+        # Create and train LightGBM model
+        self.model = lgb.LGBMRegressor(**self.params)
         
         # Train the model
-        self.model.fit(X_train, y_train)
+        self.model.fit(
+            X_train, y_train,
+            eval_set=[(X_val, y_val)],
+            callbacks=[lgb.early_stopping(stopping_rounds=20)]
+        )
         
         # Make predictions
         y_train_pred = self.model.predict(X_train)
         y_val_pred = self.model.predict(X_val)
         y_test_pred = self.model.predict(X_test)
         
-        # Calculate metrics (convert NumPy types to standard Python floats for JSON serialization)
+        # Calculate metrics
+        train_metrics = calculate_metrics(y_train, y_train_pred)
+        val_metrics = calculate_metrics(y_val, y_val_pred)
+        test_metrics = calculate_metrics(y_test, y_test_pred)
+        
         self.training_metrics = {
-            'train_rmse': float(np.sqrt(mean_squared_error(y_train, y_train_pred))),
-            'train_mae': float(mean_absolute_error(y_train, y_train_pred)),
-            'train_r2': float(r2_score(y_train, y_train_pred)),
-            'val_rmse': float(np.sqrt(mean_squared_error(y_val, y_val_pred))),
-            'val_mae': float(mean_absolute_error(y_val, y_val_pred)),
-            'val_r2': float(r2_score(y_val, y_val_pred)),
-            'test_rmse': float(np.sqrt(mean_squared_error(y_test, y_test_pred))),
-            'test_mae': float(mean_absolute_error(y_test, y_test_pred)),
-            'test_r2': float(r2_score(y_test, y_test_pred))
+            'train_rmse': train_metrics['rmse'],
+            'train_mae': train_metrics['mae'],
+            'train_r2': train_metrics['r2'],
+            'val_rmse': val_metrics['rmse'],
+            'val_mae': val_metrics['mae'],
+            'val_r2': val_metrics['r2'],
+            'test_rmse': test_metrics['rmse'],
+            'test_mae': test_metrics['mae'],
+            'test_r2': test_metrics['r2']
         }
         
-        # Store feature importance (approximation for HistGradientBoosting)
-        if hasattr(self.model, 'feature_importances_'):
-            self.feature_importance = {
-                name: float(imp) for name, imp in zip(feature_names, self.model.feature_importances_)
-            }
-        else:
-            # Placeholder for importance
-            self.feature_importance = {name: 1.0/len(feature_names) for name in feature_names}
+        # Store feature importance
+        importances = self.model.feature_importances_
+        self.feature_importance = {
+            name: float(imp) for name, imp in zip(feature_names, importances)
+        }
         
         self.is_trained = True
-        
-        # Save the model
         self._save_model()
-        
-        print("\n=== Training Metrics ===")
-        print(f"Train RMSE: {self.training_metrics['train_rmse']:.4f} kW")
-        print(f"Val RMSE: {self.training_metrics['val_rmse']:.4f} kW")
-        print(f"Test RMSE: {self.training_metrics['test_rmse']:.4f} kW")
-        print(f"Test R²: {self.training_metrics['test_r2']:.4f}")
         
         return self.training_metrics
     
     def predict(self, X: np.ndarray) -> np.ndarray:
-        """
-        Make predictions using the trained model
-        
-        Args:
-            X: Feature matrix (NumPy array)
-            
-        Returns:
-            Array of predictions
-        """
+        """Make predictions"""
         if not self.is_trained:
             raise ValueError("Model must be trained before making predictions")
         
         predictions = self.model.predict(X)
-        
-        # Ensure predictions are non-negative
-        predictions = np.maximum(predictions, 0)
-        
-        return predictions
+        return np.maximum(predictions, 0)
 
     def predict_recursive(self, X: np.ndarray) -> np.ndarray:
-        """
-        Make recursive multi-step predictions.
-        Updates lag features internally for each step.
-        
-        Args:
-            X: Feature matrix with base features
-            
-        Returns:
-            Array of recursive predictions
-        """
+        """Make recursive multi-step predictions"""
         if not self.is_trained:
             raise ValueError("Model must be trained before making predictions")
             
         X = X.copy()
-        
         predictions = []
         
         # Identify indices of lag columns
@@ -173,39 +173,28 @@ class SolarPredictionModel:
         }
         
         for i in range(len(X)):
-            # 1. Predict current step
             current_X = X[[i]]
             pred = self.model.predict(current_X)[0]
             pred = max(0, pred)
             predictions.append(pred)
             
-            # 2. Update lags for FUTURE rows
             for j in range(i + 1, len(X)):
                 dist = j - i
                 lag_key = f'value_lag_{dist}'
                 if lag_key in lag_indices:
                     X[j, lag_indices[lag_key]] = pred
                     
-                # Update rolling means proxy
                 for w_key, w_idx in rolling_mean_indices.items():
                     window = int(w_key.split('_')[-1])
                     recent = predictions[-window:]
-                    X[j, w_idx] = np.mean(recent)
+                    X[j, w_idx] = np.mean(recent) if recent else 0
                         
         return np.array(predictions)
 
     def predict_with_confidence(self, X: np.ndarray, n_iterations: int = 100) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Make predictions with confidence intervals.
-        Uses recursive prediction for the mean.
-        """
-        # Generate recursive predictions for the central estimate
+        """Make predictions with confidence intervals"""
         predictions = self.predict_recursive(X)
-        
-        # Simple confidence interval based on training error
         std_error = self.training_metrics.get('test_rmse', 0.5)
-        
-        # Increase uncertainty over time (recursive forecasts drift)
         uncertainty_growth = np.linspace(1.0, 2.0, len(predictions))
         
         lower_bound = np.maximum(predictions - (1.96 * std_error * uncertainty_growth), 0)
@@ -214,99 +203,54 @@ class SolarPredictionModel:
         return predictions, lower_bound, upper_bound
     
     def get_feature_importance(self, top_n: int = 10) -> Dict[str, float]:
-        """
-        Get top N most important features
-        
-        Args:
-            top_n: Number of top features to return
-            
-        Returns:
-            Dictionary of feature names and their importance scores
-        """
+        """Get top N features"""
         if not self.feature_importance:
             return {}
-        
-        # Sort by importance
-        sorted_features = sorted(
-            self.feature_importance.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
-        
+        sorted_features = sorted(self.feature_importance.items(), key=lambda x: x[1], reverse=True)
         return dict(sorted_features[:top_n])
     
     def _save_model(self):
-        """Save the trained model to disk"""
+        """Save model using pickle"""
         try:
-            # Ensure model path is absolute to prevent issues in serverless environments
-            if not os.path.isabs(self.model_path):
-                 base_dir = os.path.dirname(os.path.abspath(__file__))
-                 full_path = os.path.join(base_dir, self.model_path)
-            else:
-                 full_path = self.model_path
-
-            try:
-                # Create models directory if it doesn't exist
-                os.makedirs(os.path.dirname(full_path), exist_ok=True)
-                
-                # Save metadata and model together using pickle
-                model_data = {
-                    'model': self.model,
-                    'feature_importance': self.feature_importance,
-                    'training_metrics': self.training_metrics,
-                    'is_trained': self.is_trained,
-                    'feature_columns': list(self.feature_importance.keys())
-                }
-                with open(full_path, 'wb') as f:
-                    pickle.dump(model_data, f)
-                
-                print(f"Model saved to {full_path}")
-            except (IOError, PermissionError) as pe:
-                print(f"Read-only filesystem detected ({pe}). Attempting to save to /tmp...")
-                # Fallback to /tmp for ephemeral persistence in serverless environments
-                tmp_path = os.path.join('/tmp', os.path.basename(full_path))
-                with open(tmp_path, 'wb') as f:
-                    pickle.dump(model_data, f)
-                print(f"Model saved temporarily to {tmp_path}")
-                
+            full_path = self.model_path if os.path.isabs(self.model_path) else os.path.join(os.path.dirname(os.path.abspath(__file__)), self.model_path)
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            
+            model_data = {
+                'model_obj': self.model,
+                'feature_importance': self.feature_importance,
+                'training_metrics': self.training_metrics,
+                'is_trained': self.is_trained,
+                'feature_columns': self.feature_columns
+            }
+            
+            with open(full_path, 'wb') as f:
+                pickle.dump(model_data, f)
+            print(f"Model saved to {full_path}")
         except Exception as e:
             print(f"Error saving model: {e}")
     
     def _load_model(self):
-        """Load a trained model from disk"""
+        """Load model using pickle"""
         try:
-            # Handle relative paths in serverless environments
-            if not os.path.isabs(self.model_path):
-                base_dir = os.path.dirname(os.path.abspath(__file__))
-                full_path = os.path.join(base_dir, self.model_path)
-            else:
-                full_path = self.model_path
-
-            # Check if a newer version exists in /tmp (ephemeral persistence)
+            full_path = self.model_path if os.path.isabs(self.model_path) else os.path.join(os.path.dirname(os.path.abspath(__file__)), self.model_path)
             tmp_path = os.path.join('/tmp', os.path.basename(full_path))
             load_path = tmp_path if os.path.exists(tmp_path) else full_path
 
             if os.path.exists(load_path):
-                # Load everything from the pickle file
                 with open(load_path, 'rb') as f:
                     model_data = pickle.load(f)
-                self.model = model_data.get('model')
+                
+                self.model = model_data.get('model_obj')
                 self.feature_importance = model_data.get('feature_importance', {})
                 self.training_metrics = model_data.get('training_metrics', {})
                 self.is_trained = model_data.get('is_trained', False)
-                self.feature_columns = model_data.get('feature_columns', list(self.feature_importance.keys()))
+                self.feature_columns = model_data.get('feature_columns', [])
                 
                 print(f"Model loaded from {load_path}")
         except Exception as e:
-            print(f"No existing model found or error loading: {e}")
-    
+            print(f"No existing model found: {e}")
+
     def get_status(self) -> Dict:
-        """
-        Get model status and metrics
-        
-        Returns:
-            Dictionary with model status information
-        """
         return {
             'is_trained': self.is_trained,
             'metrics': self.training_metrics,
