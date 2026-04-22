@@ -12,7 +12,7 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-ui': ['framer-motion', 'lucide-react', 'clsx', 'tailwind-merge'],
           'vendor-charts': ['recharts'],
-          'vendor-utils': ['date-fns', 'papaparse', 'joblib']
+          'vendor-utils': ['date-fns', 'papaparse', 'ml-random-forest', '@google/generative-ai', '@supabase/supabase-js']
         }
       }
     }
