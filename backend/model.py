@@ -2,7 +2,7 @@
 XGBoost model for solar power prediction
 """
 import numpy as np
-import joblib
+import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.ensemble import HistGradientBoostingRegressor
@@ -249,7 +249,7 @@ class SolarPredictionModel:
                 # Create models directory if it doesn't exist
                 os.makedirs(os.path.dirname(full_path), exist_ok=True)
                 
-                # Save metadata and model together using joblib
+                # Save metadata and model together using pickle
                 model_data = {
                     'model': self.model,
                     'feature_importance': self.feature_importance,
@@ -257,15 +257,16 @@ class SolarPredictionModel:
                     'is_trained': self.is_trained,
                     'feature_columns': list(self.feature_importance.keys())
                 }
-                joblib.dump(model_data, full_path)
+                with open(full_path, 'wb') as f:
+                    pickle.dump(model_data, f)
                 
                 print(f"Model saved to {full_path}")
             except (IOError, PermissionError) as pe:
                 print(f"Read-only filesystem detected ({pe}). Attempting to save to /tmp...")
                 # Fallback to /tmp for ephemeral persistence in serverless environments
                 tmp_path = os.path.join('/tmp', os.path.basename(full_path))
-                self.model.save_model(tmp_path)
-                joblib.dump(metadata, tmp_path.replace('.json', '_metadata.pkl'))
+                with open(tmp_path, 'wb') as f:
+                    pickle.dump(model_data, f)
                 print(f"Model saved temporarily to {tmp_path}")
                 
         except Exception as e:
@@ -286,8 +287,9 @@ class SolarPredictionModel:
             load_path = tmp_path if os.path.exists(tmp_path) else full_path
 
             if os.path.exists(load_path):
-                # Load everything from the joblib file
-                model_data = joblib.load(load_path)
+                # Load everything from the pickle file
+                with open(load_path, 'rb') as f:
+                    model_data = pickle.load(f)
                 self.model = model_data.get('model')
                 self.feature_importance = model_data.get('feature_importance', {})
                 self.training_metrics = model_data.get('training_metrics', {})
