@@ -160,13 +160,13 @@ const AIInsights = () => {
             </div>
 
             {/* Ask AI Section */}
-            {isAIEnabled && (
-                <div className="p-8 rounded-3xl bg-slate-900/40 border border-slate-800 backdrop-blur-md">
-                    <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-purple-400" />
-                        Ask Gemini AI
-                    </h3>
+            <div className="p-8 rounded-3xl bg-slate-900/40 border border-slate-800 backdrop-blur-md">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-purple-400" />
+                    Ask Assistant AI
+                </h3>
 
+                {isAIEnabled ? (
                     <div className="space-y-4">
                         <div className="flex gap-3">
                             <input
@@ -222,8 +222,20 @@ const AIInsights = () => {
                             ))}
                         </div>
                     </div>
-                </div>
-            )}
+                ) : (
+                    <div className="p-6 bg-slate-950/50 rounded-2xl border border-dashed border-slate-700 text-center">
+                        <p className="text-slate-400 text-sm mb-4">
+                            The AI Brain (Gemini) is currently in standby mode. To activate the intelligence:
+                        </p>
+                        <div className="inline-block px-4 py-2 bg-purple-500/10 border border-purple-500/30 rounded-lg text-purple-400 text-xs font-mono mb-4">
+                            Set VITE_GEMINI_API_KEY in Vercel Settings
+                        </div>
+                        <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                            Once configured, the chatbot will be able to analyze your college data, provide direct cost-saving tips, and guide you through energy optimization.
+                        </p>
+                    </div>
+                )}
+            </div>
 
             {/* Refresh Button */}
             <button
