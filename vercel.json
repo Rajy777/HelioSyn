@@ -15,7 +15,7 @@
   },
   "functions": {
     "api/*.py": {
-      "excludeFiles": "{node_modules,backend/venv,backend/__pycache__,public}/**"
+      "excludeFiles": "{node_modules,src,dist,public,backend/venv,backend/__pycache__,.git,.github}/**"
     }
   }
 }
